@@ -11,20 +11,78 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 
 
 int removeCharFromString(char * string, char c);
 
 
+void performOperation(char *token, int removal, char *argv[]) {
+
+	char *temp = malloc(sizeof(char)*100);
+	char *filename = malloc(sizeof(char)*100);		
+	int size;
+
+	strcpy(temp, "messages/");
+	strcat(temp, token);
+	removeCharFromString(temp, '\n');
+	strcpy(filename, strcat(temp, "StreamUsers.txt"));
+	FILE *fptr = fopen(filename, "a+");
+
+	fseek(fptr, 0, SEEK_END);
+	size = ftell(fptr);
+	fseek(fptr, 0, SEEK_SET);
+
+	/*Perform the addition or removal here*/
+	if (removal) {
+		if (size != 0) {
+			FILE *outFile = fopen("messages/temp.txt", "w+");
+			char buffer[255];	
+
+			while (fgets(buffer, 255, fptr) != NULL) {
+
+				if (strstr(buffer, argv[2]) == NULL)
+					fprintf(outFile, "%s", buffer);
+			}
+			printf("Removing %s from %s\n", argv[2], filename);
+			remove(filename);	
+			fclose(fptr);
+			fclose(outFile);
+			rename("messages/temp.txt", filename); 
+		}
+	}
+	else {
+		/*Read file to check if user exists*/
+		
+		if (size == 0) {
+			fprintf(fptr, "%s 0\n", argv[1]);
+		}
+		else {
+			char buffer[255];	
+			int duplicate = 0;			
+
+			while (fgets(buffer, 255, fptr) != NULL) {
+				if (strstr(buffer, argv[1]) != NULL)
+					duplicate = 1;
+			}				
+			if (duplicate)
+				printf("ERROR %s already exists in %s\n", argv[1], filename);
+			else
+				fprintf(fptr, "%s 0\n", argv[1]);
+		}
+		fclose(fptr);
+	}
+
+	free(temp);
+	free(filename);
+}
+
+
 int main(int argc, char *argv[]) {
 
 	char *inputBuffer = malloc(sizeof(char)*100);
-	char *temp = malloc(sizeof(char)*100);
-	char *filename = malloc(sizeof(char)*100);
-	char *token;	
+	char *streamName = malloc(sizeof(char)*100);
+	char *token;
 	int removal = 0; /*Boolean indicating if author is to be removed, Default is add*/
-	int size;
 
 	if (argc > 3 || argc < 2) {
 		printf("Not correct arguments\n");
@@ -42,100 +100,18 @@ int main(int argc, char *argv[]) {
 	if (strchr(inputBuffer, ',') != NULL) {
 		token = strtok(inputBuffer, ",");
 		while(token != NULL) {
-
-			/*Appending file here*/
-			strcpy(temp, "messages/");
-			strcat(temp, token);
-			removeCharFromString(temp, '\n');
-			strcpy(filename, strcat(temp, "StreamUsers.txt"));
-			FILE *fptr = fopen(filename, "a+");
-
-			/*Perform the addition or removal here*/
-			if (removal) {
-				printf("Removing %s from %s\n", argv[2], filename);
-			}
-			else {
-				/*Read file to check if user */
-
-				char buffer[255];
-				char name[50];
-				while (fgets(buffer, 255, fptr) != NULL) {
-					strcpy(name, strtok(buffer, " "));
-					printf("NAME%s\n", name);
-				}
-
-				printf("Adding %s to %s\n", argv[1], filename);
-				fprintf(fptr, "%s 0\n", argv[1]);
-			}
+			strcpy(streamName, token);			
+			performOperation(streamName, removal, argv);
 			token = strtok(NULL, ",");
-			fclose(fptr);
 		}
 	}
 	else {
-		strcpy(temp, "messages/");
-		strcat(temp, inputBuffer);
-		removeCharFromString(temp, '\n');
-		strcpy(filename, strcat(temp, "StreamUsers.txt"));
-		FILE *fptr = fopen(filename, "a+");
+		performOperation(inputBuffer, removal, argv);
 
-		fseek(fptr, 0, SEEK_END);
-		size = ftell(fptr);
-		fseek(fptr, 0, SEEK_SET);
-
-		/*Perform the addition or removal here*/
-		if (removal) {
-			if (size != 0) {
-				FILE *outFile = fopen("messages/temp.txt", "w+");
-				char buffer[255];	
-
-				while (fgets(buffer, 255, fptr) != NULL) {
-					char *name = malloc(sizeof(char)*50);
-					strcpy(temp, buffer);
-					strcpy(name, strtok(temp, " "));
-
-					printf("[%s]\n", name);
-					if (strcmp(name, argv[2]) != 0) {
-						fprintf(outFile, "%s", buffer);
-					}
-					free(name);
-				}
-				printf("Removing %s from %s\n", argv[2], filename);
-				remove(filename);	
-				fclose(fptr);
-				fclose(outFile);
-				rename("messages/temp.txt", filename); 
-			}
-		}
-		else {
-			/*Read file to check if user */
-
-			if (size == 0) {
-				fprintf(fptr, "%s 0\n", argv[1]);
-			}
-			else {
-				char buffer[255];	
-				int duplicate = 0;			
-
-				while (fgets(buffer, 255, fptr) != NULL) {
-					char *name = malloc(sizeof(char)*50);
-					strcpy(name, strtok(buffer, " "));
-
-					printf("[%s]\n", name);
-					if (strcmp(name, argv[1]) == 0) 
-						duplicate = 1;
-					free(name);
-				}				
-				if (duplicate)
-					printf("ERROR %s already exists in %s\n", argv[1], filename);
-				else
-					fprintf(fptr, "%s 0\n", argv[1]);
-			}
-			fclose(fptr);
-		}
 	}
 
 	free(inputBuffer);
-	free(filename);
+	free(streamName);
 
 	return 0;
 }

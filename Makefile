@@ -18,4 +18,4 @@ run:
 	valgrind --leak-check=full --show-reachable=yes ./a2 
 
 clean: 
-	rm -f *.o a2 assets.txt addauthor
+	rm -f *.o a2 assets.txt addauthor messages/*
