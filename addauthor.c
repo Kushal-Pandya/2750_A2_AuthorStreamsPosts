@@ -16,7 +16,7 @@
 int removeCharFromString(char * string, char c);
 
 
-void performOperation(char *token, int removal, char *argv[]) {
+void performAdd(char *token, char *name) {
 
 	char *temp = malloc(sizeof(char)*100);
 	char *filename = malloc(sizeof(char)*100);		
@@ -25,51 +25,67 @@ void performOperation(char *token, int removal, char *argv[]) {
 	strcpy(temp, "messages/");
 	strcat(temp, token);
 	removeCharFromString(temp, '\n');
-	strcpy(filename, strcat(temp, "StreamUsers.txt"));
+	strcpy(filename, strcat(temp, "StreamUsers"));
+	FILE *fptr = fopen(filename, "a+");
+
+	fseek(fptr, 0, SEEK_END);
+	size = ftell(fptr);
+	fseek(fptr, 0, SEEK_SET);
+	
+	/*Read file to check if user exists*/
+	
+	if (size == 0) {
+		fprintf(fptr, "%s 0\n", name);
+	}
+	else {
+		char buffer[255];	
+		int duplicate = 0;			
+
+		while (fgets(buffer, 255, fptr) != NULL) {
+			if (strstr(buffer, name) != NULL)
+				duplicate = 1;
+		}				
+		if (duplicate)
+			printf("ERROR %s already exists in %s\n", name, filename);
+		else
+			fprintf(fptr, "%s 0\n", name);
+	}
+
+	fclose(fptr);
+	free(temp);
+	free(filename);
+}
+
+void performRemove(char *token, char *name) {
+
+	char *temp = malloc(sizeof(char)*100);
+	char *filename = malloc(sizeof(char)*100);		
+	int size;
+
+	strcpy(temp, "messages/");
+	strcat(temp, token);
+	removeCharFromString(temp, '\n');
+	strcpy(filename, strcat(temp, "StreamUsers"));
 	FILE *fptr = fopen(filename, "a+");
 
 	fseek(fptr, 0, SEEK_END);
 	size = ftell(fptr);
 	fseek(fptr, 0, SEEK_SET);
 
-	/*Perform the addition or removal here*/
-	if (removal) {
-		if (size != 0) {
-			FILE *outFile = fopen("messages/temp.txt", "w+");
-			char buffer[255];	
+	if (size != 0) {
+		FILE *outFile = fopen("messages/temp.txt", "w+");
+		char buffer[255];	
 
-			while (fgets(buffer, 255, fptr) != NULL) {
+		while (fgets(buffer, 255, fptr) != NULL) {
 
-				if (strstr(buffer, argv[2]) == NULL)
-					fprintf(outFile, "%s", buffer);
-			}
-			printf("Removing %s from %s\n", argv[2], filename);
-			remove(filename);	
-			fclose(fptr);
-			fclose(outFile);
-			rename("messages/temp.txt", filename); 
+			if (strstr(buffer, name) == NULL)
+				fprintf(outFile, "%s", buffer);
 		}
-	}
-	else {
-		/*Read file to check if user exists*/
-		
-		if (size == 0) {
-			fprintf(fptr, "%s 0\n", argv[1]);
-		}
-		else {
-			char buffer[255];	
-			int duplicate = 0;			
-
-			while (fgets(buffer, 255, fptr) != NULL) {
-				if (strstr(buffer, argv[1]) != NULL)
-					duplicate = 1;
-			}				
-			if (duplicate)
-				printf("ERROR %s already exists in %s\n", argv[1], filename);
-			else
-				fprintf(fptr, "%s 0\n", argv[1]);
-		}
+		printf("Removing %s from %s\n", name, filename);
+		remove(filename);	
 		fclose(fptr);
+		fclose(outFile);
+		rename("messages/temp.txt", filename); 
 	}
 
 	free(temp);
@@ -77,12 +93,48 @@ void performOperation(char *token, int removal, char *argv[]) {
 }
 
 
+void addUser(char *username, char*list) {
+
+	char *streamName = malloc(sizeof(char)*100);
+	char *token;
+
+	if (strchr(list, ',') != NULL) {
+		token = strtok(list, ",");
+		while(token != NULL) {
+			strcpy(streamName, token);			
+			performAdd(streamName, username);
+			token = strtok(NULL, ",");
+		}
+	}
+	else {
+		performAdd(list, username);
+	}
+	free(streamName);
+}
+
+void removeUser(char *username, char *list) {
+	
+	char *streamName = malloc(sizeof(char)*100);
+	char *token;
+
+	if (strchr(list, ',') != NULL) {
+		token = strtok(list, ",");
+		while(token != NULL) {
+			strcpy(streamName, token);			
+			performRemove(streamName, username);
+			token = strtok(NULL, ",");
+		}
+	}
+	else {
+		performRemove(list, username);
+	}
+	free(streamName);
+}
+
+
 int main(int argc, char *argv[]) {
 
 	char *inputBuffer = malloc(sizeof(char)*100);
-	char *streamName = malloc(sizeof(char)*100);
-	char *token;
-	int removal = 0; /*Boolean indicating if author is to be removed, Default is add*/
 
 	if (argc > 3 || argc < 2) {
 		printf("Not correct arguments\n");
@@ -93,25 +145,11 @@ int main(int argc, char *argv[]) {
 	fgets(inputBuffer, 100, stdin);
 
 	if (strcmp(argv[1], "-r") == 0) 
-		removal = 1; 	/*Assume remove author from lists*/
-	/*ELSE Assume add author to lists*/
-	
-
-	if (strchr(inputBuffer, ',') != NULL) {
-		token = strtok(inputBuffer, ",");
-		while(token != NULL) {
-			strcpy(streamName, token);			
-			performOperation(streamName, removal, argv);
-			token = strtok(NULL, ",");
-		}
-	}
-	else {
-		performOperation(inputBuffer, removal, argv);
-	}
+		removeUser(argv[2], inputBuffer);
+	else
+		addUser(argv[1], inputBuffer);
 
 	free(inputBuffer);
-	free(streamName);
-
 	return 0;
 }
 

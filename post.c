@@ -11,39 +11,51 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
+
+#include "stream.h"
 
 
-struct userPost {
-	char *username;
-	char *streamname;
-	char *date;
-	char *text;
-};
+char *getTimeDate() {
+	time_t rawtime;
+   	struct tm *info;
+   	char *formatTime = calloc(80, sizeof(char));
+
+   	time(&rawtime);
+   	info = localtime(&rawtime);
+
+   	strftime(formatTime, 80, "%x-%I:%M%p", info);
+   	printf("Formatted date & time : |%s|\n", formatTime);
+  
+   	return formatTime;
+}
 
 
 struct userPost *formatEntry(char *name, char *stream, char *text) {
 
-	struct userPost *newPost = malloc(sizeof(struct userPost));
+	struct userPost *newPost = malloc(sizeof(*newPost));
 	newPost->username = malloc(strlen(name)+1);
 	newPost->streamname = malloc(strlen(stream)+1);
+	newPost->date = malloc(81);
 	newPost->text = malloc(strlen(text)+1);
 
 	strcpy(newPost->username, name);
 	strcpy(newPost->streamname, stream);
+	strcpy(newPost->date, getTimeDate());
 	strcpy(newPost->text, text);
 
 	return newPost;
 }
 
 
-void readInput(char *name) {
+struct userPost *readInput(char *name) {
 
-	struct userPost *newPost;
 	char *stream = malloc(sizeof(char)*100);
-	char *text = malloc(sizeof(char)*1000);
+	char *text = calloc(1, sizeof(char)*1000);
 	char *textBuffer = malloc(sizeof(char)*100);
 	char ifEOF[2];
 
+	ifEOF[1] = '\0';
 	printf("Stream: ");
 	fgets(stream, 100, stdin);
 
@@ -55,28 +67,25 @@ void readInput(char *name) {
 		strcat(text, textBuffer);
 	}
 
-	newPost = formatEntry(name, stream, text);
-
-	printf("NAME:%s\n", newPost->username);
-	printf("STREAM:%s\n", newPost->streamname);
-	printf("TEXT:%s\n", newPost->text);
+	return formatEntry(name, stream, text);
 }
 
 
 
 int main(int argc, char *argv[]) {
 
+	struct userPost *newPost;
 	if (argc != 2) {
 		printf("Not correct arguments\n");
 		exit(0);
 	}
 
-	readInput(argv[1]);
+	newPost = readInput(argv[1]);
 
-/*	printf("NAME:%s\n", newPost->username);
+	printf("NAME:%s\n", newPost->username);
 	printf("STREAM:%s\n", newPost->streamname);
-	printf("TEXT:%s\n", newPost->text);*/
-
+	printf("DATE%s\n", newPost->date);
+	printf("TEXT:%s\n", newPost->text);
 
 	return 0;
 }

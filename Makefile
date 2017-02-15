@@ -12,7 +12,8 @@ addauthor.o: addauthor.c
 post: post.o
 	$(CC) $(CFLAGS) post.o -o post
 
-post.o: post.c
+# remove the postlib.h here when creating the library
+post.o: post.c stream.h 
 	$(CC) $(CFLAGS) -c post.c		
 
 A2: a2.o
