@@ -107,7 +107,6 @@ int main(int argc, char *argv[]) {
 	}
 	else {
 		performOperation(inputBuffer, removal, argv);
-
 	}
 
 	free(inputBuffer);
