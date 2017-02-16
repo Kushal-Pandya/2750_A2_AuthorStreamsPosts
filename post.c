@@ -32,6 +32,8 @@ char *getTimeDate() {
 struct userPost *formatEntry(char *name, char *stream, char *text) {
 
 	struct userPost *newPost = malloc(sizeof(*newPost));
+	char *temp;
+
 	newPost->username = malloc(strlen(name)+1);
 	newPost->streamname = malloc(strlen(stream)+1);
 	newPost->date = malloc(81);
@@ -39,8 +41,12 @@ struct userPost *formatEntry(char *name, char *stream, char *text) {
 
 	strcpy(newPost->username, name);
 	strcpy(newPost->streamname, stream);
-	strcpy(newPost->date, getTimeDate());
 	strcpy(newPost->text, text);
+
+	temp = getTimeDate();
+	strcpy(newPost->date, temp);
+
+	free(temp);
 
 	return newPost;
 }
@@ -48,6 +54,7 @@ struct userPost *formatEntry(char *name, char *stream, char *text) {
 
 struct userPost *readInput(char *name) {
 
+	struct userPost *toReturn;
 	char *stream = malloc(sizeof(char)*100);
 	char *text = calloc(1, sizeof(char)*1000);
 	char *textBuffer = malloc(sizeof(char)*100);
@@ -65,7 +72,13 @@ struct userPost *readInput(char *name) {
 		strcat(text, textBuffer);
 	}
 
-	return formatEntry(name, stream, text);
+	toReturn = formatEntry(name, stream, text);
+
+	free(textBuffer);
+	free(stream);
+	free(text);
+
+	return toReturn;
 }
 
 void submitPost(struct userPost *st) {
@@ -83,6 +96,12 @@ int main(int argc, char *argv[]) {
 
 	newPost = readInput(argv[1]);
 	submitPost(newPost);
+
+	free(newPost->username);
+	free(newPost->streamname);
+	free(newPost->date);
+	free(newPost->text);
+	free(newPost);
 
 	return 0;
 }

@@ -161,6 +161,7 @@ void updateStream(struct userPost *st) {
 		}
 		free(name);
 	}
+	fclose(usersfile);
 	
 	if (hasPermission == 1) {
 		FILE *streamfile = fopen(streamFilename, "a+");
