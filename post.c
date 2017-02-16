@@ -24,9 +24,7 @@ char *getTimeDate() {
    	time(&rawtime);
    	info = localtime(&rawtime);
 
-   	strftime(formatTime, 80, "%x-%I:%M%p", info);
-   	printf("Formatted date & time : |%s|\n", formatTime);
-  
+   	strftime(formatTime, 80, "%x-%I:%M%p", info);  
    	return formatTime;
 }
 
@@ -70,6 +68,9 @@ struct userPost *readInput(char *name) {
 	return formatEntry(name, stream, text);
 }
 
+void submitPost(struct userPost *st) {
+	updateStream(st);
+}
 
 
 int main(int argc, char *argv[]) {
@@ -81,11 +82,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	newPost = readInput(argv[1]);
-
-	printf("NAME:%s\n", newPost->username);
-	printf("STREAM:%s\n", newPost->streamname);
-	printf("DATE%s\n", newPost->date);
-	printf("TEXT:%s\n", newPost->text);
+	submitPost(newPost);
 
 	return 0;
 }
