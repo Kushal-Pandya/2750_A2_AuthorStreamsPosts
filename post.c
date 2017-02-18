@@ -89,12 +89,23 @@ void submitPost(struct userPost *st) {
 int main(int argc, char *argv[]) {
 
 	struct userPost *newPost;
-	if (argc != 2) {
+	char *name = malloc(sizeof(char)*100);
+	int i;
+
+	if (argc < 2) {
 		printf("Not correct arguments\n");
 		exit(0);
 	}
 
-	newPost = readInput(argv[1]);
+	strcpy(name, argv[1]);
+	if (argc > 2) {
+		for (i=2; i<argc; i++) {
+			strcat(name, " ");
+			strcat(name, argv[i]);
+		}
+	}	
+
+	newPost = readInput(name);
 	submitPost(newPost);
 
 	free(newPost->username);
@@ -102,6 +113,7 @@ int main(int argc, char *argv[]) {
 	free(newPost->date);
 	free(newPost->text);
 	free(newPost);
+	free(name);
 
 	return 0;
 }

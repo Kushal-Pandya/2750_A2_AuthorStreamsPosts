@@ -13,7 +13,17 @@ import termios
 def getName():
 	if len(sys.argv) < 2:
 		sys.exit()
-	return sys.argv[1]
+	elif len(sys.argv) > 2:
+		name = ""
+		for word in sys.argv:
+			if word != sys.argv[0]:
+				if name == "":
+					name = name + word
+				else:
+					name = name + " " + word
+		return name
+	else:
+		return sys.argv[1]
 
 def clearScreen():
 	os.system('cls' if os.name == 'nt' else 'clear')
@@ -28,7 +38,7 @@ def getListOfStreams(name):
 	for streamfile in glob.glob('messages/*StreamUsers'):
 		with open(streamfile) as f:
 			for line in f.readlines():
-				if line.strip().split(' ', 1)[0] == name:
+				if line.strip().split(',', 1)[0] == name:
 					stream = streamfile[9:].split('StreamUsers', 1)[0]
 					streamList.append(stream)
 
@@ -42,8 +52,8 @@ def getLastSeenPost(stream, name):
 
 	with open(filename) as f:
 		for line in f.readlines():
-			if line.strip().split(' ', 1)[0] == name:
-				return int(line.strip().split(' ', 1)[1])
+			if line.strip().split(',', 1)[0] == name:
+				return int(line.strip().split(',', 1)[1])
 
 
 # See if this function is useful
@@ -250,7 +260,7 @@ def updateUser(stream, name, newRead):
 
 	with open(filename, 'w') as f:
 		for line in contents:
-			if line.strip().split(' ', 1)[0] == name:
+			if line.strip().split(',', 1)[0] == name:
 				f.write('%s %d\n' % (name, newRead))
 			else:
 				f.write(line)

@@ -20,20 +20,23 @@ void performAdd(char *token, char *name) {
 	/*Read file to check if user exists*/
 	
 	if (size == 0) {
-		fprintf(fptr, "%s 0\n", name);
+		fprintf(fptr, "%s, 0\n", name);
 	}
 	else {
 		char buffer[255];	
 		int duplicate = 0;			
 
 		while (fgets(buffer, 255, fptr) != NULL) {
-			if (strstr(buffer, name) != NULL)
+
+			strcpy(temp, buffer);
+			strtok(temp, ",");
+			if (strcmp(temp, name) == 0)
 				duplicate = 1;
 		}				
 		if (duplicate)
-			printf("ERROR %s already exists in %s\n", name, filename);
+			printf("ERROR '%s' already exists in %s\n", name, filename);
 		else
-			fprintf(fptr, "%s 0\n", name);
+			fprintf(fptr, "%s, 0\n", name);
 	}
 
 	fclose(fptr);
@@ -63,10 +66,11 @@ void performRemove(char *token, char *name) {
 
 		while (fgets(buffer, 255, fptr) != NULL) {
 
-			if (strstr(buffer, name) == NULL)
+			strcpy(temp, buffer);
+			strtok(temp, ",");
+			if (strcmp(temp, name) != 0)
 				fprintf(outFile, "%s", buffer);
 		}
-		printf("Removing %s from %s\n", name, filename);
 		remove(filename);	
 		fclose(fptr);
 		fclose(outFile);
@@ -155,7 +159,7 @@ void updateStream(struct userPost *st) {
 
 		while (fgets(buffer, 255, usersfile) != NULL) {
 			strcpy(temp, buffer);
-			token = strtok(temp, " ");
+			token = strtok(temp, ",");
 			if (strcmp(token, name) == 0)
 				hasPermission = 1;
 		}
