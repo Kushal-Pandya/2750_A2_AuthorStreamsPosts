@@ -19,7 +19,7 @@ def clearScreen():
 	os.system('cls' if os.name == 'nt' else 'clear')
 
 def printFooter():
-	print '+PageUp  -PageDown  o-orderToggle  m-markAll  s-newStream  c-checkForNew  q-quit'
+	print '-PageUp  +PageDown  o-orderToggle  m-markAll  s-newStream  c-checkForNew  q-quit'
 
 # May need to change the way the name is stored (change tokenize to delimiter rather than space)
 def getListOfStreams(name):
@@ -32,7 +32,7 @@ def getListOfStreams(name):
 					stream = streamfile[9:].split('StreamUsers', 1)[0]
 					streamList.append(stream)
 
-	streamList.append('all')
+	streamList.append('all') 
 	streamList.append('\n')
 	return streamList
 
@@ -109,45 +109,129 @@ def streamSelected(stream, name):
 			print f.readline(),
 			lineCount = lineCount + 1
 
-		if check == 1:
-			print '\nUser has read all posts, press the Up Arrow to view older posts'
-
 		updateUser(stream, name, postRead)
 		print '\n'
 
+	if check == 1:
+		print 'All posts in current stream read, press + for previous posts\n'
 
-def keyPressed(stream, name):
-	orig_settings = termios.tcgetattr(sys.stdin)
+	return postRead	
+
+
+def movePageDown(stream, name, postRead):
+	filename = 'messages/%sStream' % stream
+	lineCount = 0
+	check = 0
+
+	positions = getPostPositions(stream)
+
+	if postRead == positions[-1]:
+		return postRead
+
+	with open(filename) as f:
+		f.seek(postRead, 0)
+
+		while (lineCount < 22):
+			if f.tell() in positions: 
+
+				if f.tell() == positions[-1]:
+					check = 1
+				if check == 0:
+					print '-'*50
+				lineCount = lineCount + 1
+				postRead = f.tell()
+
+			print f.readline(),
+			lineCount = lineCount + 1
+		print '\n'
+
+		if postRead > getLastSeenPost(stream, name):
+			updateUser(stream, name, postRead)
+
+	return postRead	
+
+
+def movePageUp(stream, name, postRead):
+	filename = 'messages/%sStream' % stream
+	lineCount = 0
+	seekTo = 0
+	check = 0
+
+	positions = getPostPositions(stream)
+
+	if postRead == positions[0]:
+		seekTo = 0
+	else:
+	 	for pos in positions:
+			if postRead == pos:
+				seekTo = positions[positions.index(pos)-1]
+
+	with open(filename) as f:
+		f.seek(seekTo, 0)
+
+		while (lineCount < 22):
+			if f.tell() in positions: 
+
+				if f.tell() == positions[-1]:
+					check = 1
+				if check == 0:
+					print '-'*50
+				lineCount = lineCount + 1
+				postRead = f.tell()
+
+			print f.readline(),
+			lineCount = lineCount + 1
+		print '\n'
+
+	if seekTo == 0:
+		return positions[0]
+	return seekTo
+
+
+def keyPressed(stream, name, postRead):
+	origSettings = termios.tcgetattr(sys.stdin)
 
 	tty.setraw(sys.stdin)
 	x = 0
 
 	while x != 'q': 
 		x = sys.stdin.read(1)[0]
-		clearScreen()
 		
-		if x == '+':
-			print 'PAGE UP'
-		elif x == '-':
-			print 'PAGE DOWN'
-		elif x == 'o':
-			print 'ORDER TOGGLE'
-		elif x == 'm':
-			print 'MARK ALL'
-		elif x == 's':
-			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
-			stream = selectStream(name)
+		if x == '-':
 			clearScreen()
-			streamSelected(stream, name)
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
+			postRead = movePageUp(stream, name, postRead)
 			printFooter()
 			tty.setraw(sys.stdin)
-		elif x == 'c':
-			print 'CHECK FOR NEW'
+
+		elif x == '+' or x == 'c':
+			clearScreen()
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
+			postRead = movePageDown(stream, name, postRead)
+			printFooter()
+			tty.setraw(sys.stdin)
+
+		elif x == 'o':
+			print 'ORDER TOGGLE'
+
+		elif x == 'm':
+			updateUser(stream, name, getPostPositions(stream)[-1])
+
+		elif x == 's':
+			clearScreen()
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
+			print 'Select New Stream:'
+			stream = selectStream(name)
+			clearScreen()
+			postRead = streamSelected(stream, name)
+			printFooter()
+			tty.setraw(sys.stdin)
+
 		elif x == 'q':
-			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings) 
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings) 
 			sys.exit()
 
-	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)  
+	termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)  
 
 
 def updateUser(stream, name, newRead):
@@ -169,10 +253,10 @@ if __name__ == "__main__":
 	stream = selectStream(name)
 
 	clearScreen()
-	streamSelected(stream, name)
+	postRead = streamSelected(stream, name)
 	printFooter()
 
-	keyPressed(stream, name)
+	keyPressed(stream, name, postRead)
 
 
 
