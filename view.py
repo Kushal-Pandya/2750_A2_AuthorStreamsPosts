@@ -113,7 +113,7 @@ def streamSelected(stream, name):
 		print '\n'
 
 	if check == 1:
-		print 'All posts in current stream read, press + for previous posts\n'
+		print 'All posts in current stream are read, press - for previous posts\n'
 
 	return postRead	
 
@@ -204,7 +204,7 @@ def keyPressed(stream, name, postRead):
 			printFooter()
 			tty.setraw(sys.stdin)
 
-		elif x == '+' or x == 'c':
+		elif x == '+':
 			clearScreen()
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
 			postRead = movePageDown(stream, name, postRead)
@@ -216,6 +216,14 @@ def keyPressed(stream, name, postRead):
 
 		elif x == 'm':
 			updateUser(stream, name, getPostPositions(stream)[-1])
+		
+		elif x == 'c':
+			clearScreen()
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
+			newPositions = getPostPositions(stream)
+			postRead = movePageDown(stream, name, newPositions[-2])
+			printFooter()
+			tty.setraw(sys.stdin)
 
 		elif x == 's':
 			clearScreen()
