@@ -106,7 +106,7 @@ def streamSelected(stream, name):
 
 		positions = getPostPositions(stream)
 
-		while (lineCount < 22):
+		while (lineCount < 21):
 			if f.tell() in positions: 
 
 				if f.tell() == positions[-1]:
@@ -121,6 +121,7 @@ def streamSelected(stream, name):
 
 		updateUser(stream, name, postRead)
 		print '\n'
+		lineCount = lineCount + 1
 
 	if check == 1:
 		print 'All posts in current stream are read, press - for previous posts\n'
@@ -141,7 +142,7 @@ def movePageDown(stream, name, postRead):
 	with open(filename) as f:
 		f.seek(postRead, 0)
 
-		while (lineCount < 22):
+		while (lineCount < 21):
 			if f.tell() in positions: 
 
 				if f.tell() == positions[-1]:
@@ -154,6 +155,7 @@ def movePageDown(stream, name, postRead):
 			print f.readline(),
 			lineCount = lineCount + 1
 		print '\n'
+		lineCount = lineCount + 1
 
 		if postRead > getLastSeenPost(stream, name):
 			updateUser(stream, name, postRead)
@@ -173,7 +175,8 @@ def movePageDownToggle(filePointer):
 			lineCount = lineCount + 1
 		toReturn = f.tell()
 
-	return toReturn
+	offset = toReturn - filePointer
+	return toReturn, offset
 
 
 def movePageUp(stream, name, postRead):
@@ -194,7 +197,7 @@ def movePageUp(stream, name, postRead):
 	with open(filename) as f:
 		f.seek(seekTo, 0)
 
-		while (lineCount < 22):
+		while (lineCount < 21):
 			if f.tell() in positions: 
 
 				if f.tell() == positions[-1]:
@@ -207,10 +210,29 @@ def movePageUp(stream, name, postRead):
 			print f.readline(),
 			lineCount = lineCount + 1
 		print '\n'
+		lineCount = lineCount + 1
 
 	if seekTo == 0:
 		return positions[0]
 	return seekTo
+
+
+def movePageUpToggle(filePointer, offsetCheck):
+	filename = 'messages/temp.txt'
+	lineCount = 0
+
+	if offsetCheck:
+		filePointer = 0
+
+	with open(filename) as f:
+
+		f.seek(filePointer, 0)
+		while lineCount < 22:
+			print f.readline(),
+			lineCount = lineCount + 1
+		toReturn = f.tell()
+
+	return toReturn
 
 
 def getSortedNames(stream, positions):
@@ -299,6 +321,8 @@ def keyPressed(stream, name, postRead):
 	origSettings = termios.tcgetattr(sys.stdin)
 	orderToggle = 0
 	orderToggleFP = 0
+	toggleOffset = 0
+	offsetCheck = 0
 
 	tty.setraw(sys.stdin)
 	x = 0
@@ -309,7 +333,12 @@ def keyPressed(stream, name, postRead):
 		if x == '-':
 			clearScreen()
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
-			postRead = movePageUp(stream, name, postRead)
+
+			if orderToggle:
+				orderToggleFP = movePageUpToggle(toggleOffset, offsetCheck)
+				offsetCheck = 1
+			else:
+				postRead = movePageUp(stream, name, postRead)
 			printFooter()
 			tty.setraw(sys.stdin)
 
@@ -318,7 +347,7 @@ def keyPressed(stream, name, postRead):
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
 
 			if orderToggle:
-				orderToggleFP = movePageDownToggle(orderToggleFP)
+				orderToggleFP, toggleOffset = movePageDownToggle(orderToggleFP)
 			else:
 				postRead = movePageDown(stream, name, postRead)
 			printFooter()
@@ -334,6 +363,8 @@ def keyPressed(stream, name, postRead):
 				del positions[-1]
 
 				writeByNames(getSortedNames(stream, positions), getSortedNamesDict(stream, positions))
+				orderToggleFP = 0
+				toggleOffset = 0
 				orderToggleFP = displayStreamByName(orderToggleFP)
 				orderToggle = 1
 			else:
