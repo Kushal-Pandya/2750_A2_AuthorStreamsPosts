@@ -3,11 +3,11 @@
 WHAT DOESNT WORK:
 ----------------------------
 
-A1!
-
-
-view:
+view.py:
 
 	- 'all' streams
 
-	
+TODO:
+	- test on server
+	- implement 'all'
+	- 
