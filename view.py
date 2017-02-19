@@ -161,6 +161,21 @@ def movePageDown(stream, name, postRead):
 	return postRead	
 
 
+def movePageDownToggle(filePointer):
+	filename = 'messages/temp.txt'
+	lineCount = 0
+
+	with open(filename) as f:
+
+		f.seek(filePointer, 0)
+		while lineCount < 22:
+			print f.readline(),
+			lineCount = lineCount + 1
+		toReturn = f.tell()
+
+	return toReturn
+
+
 def movePageUp(stream, name, postRead):
 	filename = 'messages/%sStream' % stream
 	lineCount = 0
@@ -198,8 +213,92 @@ def movePageUp(stream, name, postRead):
 	return seekTo
 
 
+def getSortedNames(stream, positions):
+	filename = 'messages/%sStream' % stream
+	sortedNames = []
+
+	with open(filename) as f:
+
+		for pos in positions:
+			f.seek(pos, 0)
+			name = f.readline().split(": ", 1)[1]
+			sortedNames.append(name.strip())
+
+	return sorted(sortedNames)
+
+
+def getSortedNamesDict(stream, positions):
+	filename = 'messages/%sStream' % stream
+	sortedNames = {}
+
+	with open(filename) as f:
+
+		for pos in positions:
+			f.seek(pos, 0)
+			name = f.readline().split(": ", 1)[1]
+			name = name.strip()
+			if name in sortedNames:
+				poslist = sortedNames.get(name)
+				poslist.append(pos)
+				sortedNames[name] = poslist
+			else:
+				sortedNames[name] = [pos]
+
+	return sortedNames
+
+
+def writeByNames(namesList, namesDict):
+	filename = 'messages/%sStream' % stream
+	sortedNames = {}
+	otherPositions = getPostPositions(stream)
+	namesCompleteted = []
+
+	tempFile = open('messages/temp.txt', 'w')
+
+	with open(filename) as f:
+		for name in namesList:
+			if name not in namesCompleteted:
+				positions = namesDict.get(name)
+				if type(positions) is list:
+					for pos in positions:
+						f.seek(pos, 0)
+						tempFile.write(f.readline())
+						while f.tell() not in otherPositions:
+							tempFile.write(f.readline())
+						tempFile.write('-'*50)
+						tempFile.write('\n')
+				else:
+					f.seek(pos, 0)
+					tempFile.write(f.readline())
+					while f.tell() not in otherPositions:
+						tempFile.write(f.readline())
+					tempFile.write('-'*50)
+					tempFile.write('\n')
+				namesCompleteted.append(name)	
+
+	tempFile.close()
+
+
+def displayStreamByName(filePointer):
+	filename = 'messages/temp.txt'
+	lineCount = 0
+
+	with open(filename) as f:
+
+		f.seek(filePointer, 0)
+		while lineCount < 22:
+			print f.readline(),
+			lineCount = lineCount + 1
+		toReturn = f.tell()
+
+	return toReturn
+
+
+
 def keyPressed(stream, name, postRead):
 	origSettings = termios.tcgetattr(sys.stdin)
+	orderToggle = 0
+	orderToggleFP = 0
 
 	tty.setraw(sys.stdin)
 	x = 0
@@ -217,12 +316,32 @@ def keyPressed(stream, name, postRead):
 		elif x == '+':
 			clearScreen()
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
-			postRead = movePageDown(stream, name, postRead)
+
+			if orderToggle:
+				orderToggleFP = movePageDownToggle(orderToggleFP)
+			else:
+				postRead = movePageDown(stream, name, postRead)
 			printFooter()
 			tty.setraw(sys.stdin)
 
 		elif x == 'o':
-			print 'ORDER TOGGLE'
+			clearScreen()
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
+
+			if orderToggle == 0:
+				positions = [0]
+				positions.extend(getPostPositions(stream))
+				del positions[-1]
+
+				writeByNames(getSortedNames(stream, positions), getSortedNamesDict(stream, positions))
+				orderToggleFP = displayStreamByName(orderToggleFP)
+				orderToggle = 1
+			else:
+				postRead = streamSelected(stream, name)
+				orderToggle = 0
+
+			printFooter()
+			tty.setraw(sys.stdin)
 
 		elif x == 'm':
 			updateUser(stream, name, getPostPositions(stream)[-1])
@@ -261,7 +380,7 @@ def updateUser(stream, name, newRead):
 	with open(filename, 'w') as f:
 		for line in contents:
 			if line.strip().split(',', 1)[0] == name:
-				f.write('%s %d\n' % (name, newRead))
+				f.write('%s, %d\n' % (name, newRead))
 			else:
 				f.write(line)
 			
