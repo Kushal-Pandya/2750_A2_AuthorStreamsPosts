@@ -42,7 +42,6 @@ def getListOfStreams(name):
 					stream = streamfile[9:].split('StreamUsers', 1)[0]
 					streamList.append(stream)
 
-	streamList.append('all') 
 	streamList.append('\n')
 	return streamList
 
@@ -75,7 +74,7 @@ def getPostPositions(stream):
 def selectStream(name):
 	# getting and printing list of streams
 	streamList = getListOfStreams(name)
-	if len(streamList) == 2:
+	if len(streamList) == 1:
 		print '%s does not exist in any streams.. exiting' % name
 		sys.exit()
 
@@ -381,7 +380,11 @@ def keyPressed(stream, name, postRead):
 			clearScreen()
 			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, origSettings)
 			newPositions = getPostPositions(stream)
-			postRead = movePageDown(stream, name, newPositions[-2])
+
+			if len(newPositions) > 1:
+				postRead = movePageDown(stream, name, newPositions[-2])
+			else:
+				postRead = movePageDown(stream, name, newPositions[-1])
 			printFooter()
 			tty.setraw(sys.stdin)
 

@@ -1,7 +1,26 @@
 CC = gcc
 CFLAGS = -Wall -ansi -g
+LISTS_FILES = var.c func.c class.c list.c
 
-all: addauthor post
+
+all: A1 makePost A2
+
+
+
+A1: a1.o list.o 
+	$(CC) $(LISTS_FILES) $(CFLAGS) a1.o -o a1
+
+a1.o: a1.c a1.h
+	$(CC) $(CFLAGS) -c a1.c 
+
+list.o: list.c a1.h
+	$(CC) $(CFLAGS) -c list.c 
+
+makePost:
+	./a1 post.cc
+
+
+A2: addauthor post
 
 addauthor: addauthor.o
 	$(CC) $(CFLAGS) addauthor.o -o addauthor -L. -lstream
@@ -23,4 +42,4 @@ run:
 	valgrind --leak-check=full --show-reachable=yes ./a2 
 
 clean: 
-	rm -f *.o a2 assets.txt addauthor messages/* post libstream.a
+	rm -f *.o a2 a1 assets.txt addauthor post libstream.a messages/*
