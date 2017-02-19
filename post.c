@@ -12,51 +12,39 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-
 #include "stream.h"
 
 
-char *getTimeDate() {
+struct PostEntry {
+	void (*PreadInput)();
+	void (*PformatEntry)();
+	void (*PgetTimeDate)();
+	void (*PsubmitPost)();
+};
+
+
+void PgetTimeDate(struct userPost *newPost, char *formatTime) {
 	time_t rawtime;
    	struct tm *info;
-   	char *formatTime = calloc(80, sizeof(char));
 
    	time(&rawtime);
    	info = localtime(&rawtime);
 
-   	strftime(formatTime, 80, "%x-%I:%M%p", info);  
-   	return formatTime;
+   	strftime(formatTime, 80, "%x-%I:%M%p", info); 
+	strcpy(newPost->date, formatTime); 
 }
 
 
-struct userPost *formatEntry(char *name, char *stream, char *text) {
-
-	struct userPost *newPost = malloc(sizeof(*newPost));
-	char *temp;
-
-	newPost->username = malloc(strlen(name)+1);
-	newPost->streamname = malloc(strlen(stream)+1);
-	newPost->date = malloc(81);
-	newPost->text = malloc(strlen(text)+1);
+void PformatEntry(struct userPost *newPost, char *name, char *stream, char *text) {
 
 	strcpy(newPost->username, name);
 	strcpy(newPost->streamname, stream);
 	strcpy(newPost->text, text);
-
-	temp = getTimeDate();
-	strcpy(newPost->date, temp);
-
-	free(temp);
-
-	return newPost;
 }
 
 
-struct userPost *readInput(char *name) {
+void PreadInput(char *name, char *stream, char *text) {
 
-	struct userPost *toReturn;
-	char *stream = malloc(sizeof(char)*100);
-	char *text = calloc(1, sizeof(char)*1000);
 	char *textBuffer = malloc(sizeof(char)*100);
 	char ifEOF[2];
 
@@ -72,24 +60,33 @@ struct userPost *readInput(char *name) {
 		strcat(text, textBuffer);
 	}
 
-	toReturn = formatEntry(name, stream, text);
-
 	free(textBuffer);
-	free(stream);
-	free(text);
-
-	return toReturn;
 }
 
-void submitPost(struct userPost *st) {
+
+void PsubmitPost(struct userPost *st) {
 	updateStream(st);
+}
+
+
+void constructorPostEntry(struct PostEntry *self) {
+	self->PreadInput = &PreadInput;
+	self->PformatEntry = &PformatEntry;
+	self->PgetTimeDate = &PgetTimeDate;
+	self->PsubmitPost = &PsubmitPost;
 }
 
 
 int main(int argc, char *argv[]) {
 
-	struct userPost *newPost;
+	struct userPost *newPost = malloc(sizeof(*newPost));
 	char *name = malloc(sizeof(char)*100);
+	char *stream = malloc(sizeof(char)*100);
+	char *text = calloc(1, sizeof(char)*1000);
+	char *formatTime = calloc(80, sizeof(char));
+
+	struct PostEntry p;
+	constructorPostEntry(&p);
 	int i;
 
 	if (argc < 2) {
@@ -105,8 +102,15 @@ int main(int argc, char *argv[]) {
 		}
 	}	
 
-	newPost = readInput(name);
-	submitPost(newPost);
+	p.PreadInput(name, stream, text);
+	newPost->username = malloc(strlen(name)+1);
+	newPost->streamname = malloc(strlen(stream)+1);
+	newPost->date = malloc(81);
+	newPost->text = malloc(strlen(text)+1);
+
+	p.PformatEntry(newPost, p, name, stream, text);
+	p.PgetTimeDate(newPost, formatTime);
+	p.PsubmitPost(newPost);
 
 	free(newPost->username);
 	free(newPost->streamname);
@@ -114,6 +118,9 @@ int main(int argc, char *argv[]) {
 	free(newPost->text);
 	free(newPost);
 	free(name);
+	free(stream);
+	free(text);
+	free(formatTime);
 
 	return 0;
 }
