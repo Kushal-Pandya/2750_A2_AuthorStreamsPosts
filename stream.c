@@ -28,10 +28,8 @@ void performAdd(char *token, char *name) {
 
 		while (fgets(buffer, 255, fptr) != NULL) {
 
-			strcpy(temp, buffer);
-			strtok(temp, ",");
-			if (strcmp(temp, name) == 0)
-				duplicate = 1;
+			if (strstr(buffer, name) != NULL)
+					duplicate = 1;
 		}				
 		if (duplicate)
 			printf("ERROR '%s' already exists in %s\n", name, filename);
@@ -66,9 +64,7 @@ void performRemove(char *token, char *name) {
 
 		while (fgets(buffer, 255, fptr) != NULL) {
 
-			strcpy(temp, buffer);
-			strtok(temp, ",");
-			if (strcmp(temp, name) != 0)
+			if (strstr(buffer, name) == NULL)
 				fprintf(outFile, "%s", buffer);
 		}
 		remove(filename);	
@@ -82,15 +78,16 @@ void performRemove(char *token, char *name) {
 }
 
 
-void addUser(char *username, char*list) {
+void addUser(char *username, char *list) {
 
-	char *streamName = malloc(sizeof(char)*100);
+	char *streamName = calloc(100, sizeof(char));
 	char *token;
 
 	if (strchr(list, ',') != NULL) {
 		token = strtok(list, ",");
 		while(token != NULL) {
-			strcpy(streamName, token);			
+			printf("%s\n", token);
+			strcpy(streamName, token);	
 			performAdd(streamName, username);
 			token = strtok(NULL, ",");
 		}
