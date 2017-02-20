@@ -86,7 +86,6 @@ void addUser(char *username, char *list) {
 	if (strchr(list, ',') != NULL) {
 		token = strtok(list, ",");
 		while(token != NULL) {
-			printf("%s\n", token);
 			strcpy(streamName, token);	
 			performAdd(streamName, username);
 			token = strtok(NULL, ",");
