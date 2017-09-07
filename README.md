@@ -1,7 +1,7 @@
-CIS 2750
-A2
-Author: Kushal Pandya
-Due Date: February 17 2017
+A2 for CIS2750
+==================
+Part of Blog Project
+Added ability to add/remove authors, post to streams and CLI Python posts Viewer
 
 
 COMPILE INSTRUCTIONS
