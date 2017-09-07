@@ -1,7 +1,7 @@
 A2 for CIS2750
 ==================
-Part of Blog Project
-Added ability to add/remove authors, post to streams and CLI Python posts Viewer
+- Part of Blog Project
+- Added ability to add/remove authors, post to streams and CLI Python posts Viewer
 
 
 COMPILE INSTRUCTIONS
